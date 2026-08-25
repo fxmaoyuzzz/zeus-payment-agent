@@ -4,6 +4,12 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 
 当前阶段先实现最小闭环：用户输入自然语言问题，LLM 判断是否需要查询订单，并通过 ToolCalling 调用订单查询工具，从 MySQL 读取订单数据后生成中文回答。
 
+## 项目效果
+
+![查询订单支付失败原因效果图 1](png/query_order_pay_fail_reason_1.png)
+
+![查询订单支付失败原因效果图 2](png/query_order_pay_fail_reason_2.png)
+
 ## 功能能力
 
 ### 已实现
