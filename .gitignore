@@ -1,5 +1,8 @@
 HELP.md
 target/
+.env
+.env.*
+application-local.properties
 .gitattributes
 .mvn/
 mvnw
@@ -34,3 +37,4 @@ build/
 
 ### VS Code ###
 .vscode/
+/application-local.properties.example

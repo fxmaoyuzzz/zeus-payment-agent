@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zeus Payment Agent</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Zeus Payment Agent</h1>
+          <p id="sessionLabel"></p>
+        </div>
+        <button id="newSessionButton" type="button">新会话</button>
+      </header>
+
+      <section id="messages" class="messages" aria-live="polite"></section>
+
+      <form id="chatForm" class="composer">
+        <textarea
+          id="messageInput"
+          name="message"
+          rows="2"
+          placeholder="输入订单问题，例如：帮我查一下订单 P202608250001"
+          required></textarea>
+        <button id="sendButton" type="submit">发送</button>
+      </form>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
+
