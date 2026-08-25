@@ -1,6 +1,7 @@
 package com.moyu.zeuspaymentagent.chat;
 
 import com.moyu.zeuspaymentagent.order.OrderQueryTool;
+import com.moyu.zeuspaymentagent.payment.PaymentFailureAnalysisTool;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
@@ -24,21 +25,26 @@ public class ChatController {
     private static final String SYSTEM_PROMPT = """
             你是支付订单查询助手。
             你只能基于工具返回的订单数据回答，不要编造订单。
-            如果用户询问订单号、订单状态、用户订单列表、失败原因，优先调用订单查询工具。
-            回答要简洁，包含订单号、状态、金额、渠道、创建时间；失败订单要说明 failureReason。
+            如果用户询问订单号、订单状态、用户订单列表，优先调用订单查询工具。
+            如果用户询问支付为什么失败、失败原因、失败归因、如何处理，优先调用支付失败分析工具。
+            回答要简洁，包含订单号、状态、金额、渠道、创建时间。
+            分析失败订单时要说明原因类型、置信度、关键证据和建议处理动作。
             如果用户使用“它”“这个订单”“上一笔”等指代，根据最近对话历史理解指代对象。
             """;
 
     private final ChatClient chatClient;
     private final OrderQueryTool orderQueryTool;
+    private final PaymentFailureAnalysisTool paymentFailureAnalysisTool;
     private final ConversationMemoryService conversationMemoryService;
 
     public ChatController(
             ChatClient.Builder chatClientBuilder,
             OrderQueryTool orderQueryTool,
+            PaymentFailureAnalysisTool paymentFailureAnalysisTool,
             ConversationMemoryService conversationMemoryService) {
         this.chatClient = chatClientBuilder.build();
         this.orderQueryTool = orderQueryTool;
+        this.paymentFailureAnalysisTool = paymentFailureAnalysisTool;
         this.conversationMemoryService = conversationMemoryService;
     }
 
@@ -49,7 +55,7 @@ public class ChatController {
 
         var content = chatClient.prompt()
                 .messages(messages)
-                .tools(orderQueryTool)
+                .tools(orderQueryTool, paymentFailureAnalysisTool)
                 .call()
                 .content();
 
@@ -67,7 +73,7 @@ public class ChatController {
 
         chatClient.prompt()
                 .messages(messages)
-                .tools(orderQueryTool)
+                .tools(orderQueryTool, paymentFailureAnalysisTool)
                 .stream()
                 .content()
                 .subscribe(

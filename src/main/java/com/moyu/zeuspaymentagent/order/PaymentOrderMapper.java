@@ -23,7 +23,7 @@ public interface PaymentOrderMapper {
                 failure_reason AS failureReason,
                 created_at AS createdAt,
                 updated_at AS updatedAt
-            FROM payment_order
+            FROM `order`
             WHERE order_no = #{orderNo}
             LIMIT 1
             """)

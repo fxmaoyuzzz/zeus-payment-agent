@@ -22,7 +22,7 @@ public final class PaymentOrderSqlProvider {
                     failure_reason AS failureReason,
                     created_at AS createdAt,
                     updated_at AS updatedAt
-                FROM payment_order
+                FROM `order`
                 WHERE 1 = 1
                 """);
 
