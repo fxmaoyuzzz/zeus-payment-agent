@@ -2,6 +2,7 @@ package com.moyu.zeuspaymentagent.chat.controller;
 
 import com.moyu.zeuspaymentagent.chat.model.ConversationMessage;
 import com.moyu.zeuspaymentagent.chat.service.ConversationMemoryService;
+import com.moyu.zeuspaymentagent.investigation.tool.PaymentAnomalyInvestigationTool;
 import com.moyu.zeuspaymentagent.knowledge.tool.KnowledgeSearchTool;
 import com.moyu.zeuspaymentagent.order.tool.OrderQueryTool;
 import com.moyu.zeuspaymentagent.payment.tool.PaymentFailureAnalysisTool;
@@ -33,11 +34,13 @@ public class ChatController {
             如果用户询问支付为什么失败、失败原因、失败归因、如何处理，优先调用支付失败分析工具。
             如果用户询问支付渠道规则、错误码解释、失败处理 SOP、排查步骤，优先调用知识库检索工具。
             如果用户要求生成支付日报、昨日支付概览、某日支付统计，优先调用支付日报工具。
+            如果用户要求调查支付异常、继续排查异常订单或异常流水，优先调用支付异常调查工具。
             不要使用“好的”“当然可以”这类客套开场，直接回答或直接说明需要补充的信息。
             回答要简洁，包含订单号、状态、金额、渠道、创建时间。
             输出编号列表时，每个编号必须单独占一行；Markdown 加粗语法前后保持空格或换行。
             分析失败订单时要说明原因类型、置信度、关键证据和建议处理动作。
             输出日报时要包含总订单数、成功率、失败率、失败 Top 原因、渠道概况和重点关注事项。
+            输出异常调查结果时要包含调查编号、异常信号、影响范围、流水样本、知识库建议和下一步动作。
             输出日报中的列表数据必须使用标准 Markdown 表格，标题、表头、分隔线和数据行之间必须换行。
             使用知识库回答时，要结合检索片段说明来源文件和标题。
             如果用户使用“它”“这个订单”“上一笔”等指代，根据最近对话历史理解指代对象。
@@ -48,6 +51,7 @@ public class ChatController {
     private final PaymentFailureAnalysisTool paymentFailureAnalysisTool;
     private final KnowledgeSearchTool knowledgeSearchTool;
     private final PaymentDailyReportTool paymentDailyReportTool;
+    private final PaymentAnomalyInvestigationTool paymentAnomalyInvestigationTool;
     private final ConversationMemoryService conversationMemoryService;
 
     public ChatController(
@@ -56,12 +60,14 @@ public class ChatController {
             PaymentFailureAnalysisTool paymentFailureAnalysisTool,
             KnowledgeSearchTool knowledgeSearchTool,
             PaymentDailyReportTool paymentDailyReportTool,
+            PaymentAnomalyInvestigationTool paymentAnomalyInvestigationTool,
             ConversationMemoryService conversationMemoryService) {
         this.chatClient = chatClientBuilder.build();
         this.orderQueryTool = orderQueryTool;
         this.paymentFailureAnalysisTool = paymentFailureAnalysisTool;
         this.knowledgeSearchTool = knowledgeSearchTool;
         this.paymentDailyReportTool = paymentDailyReportTool;
+        this.paymentAnomalyInvestigationTool = paymentAnomalyInvestigationTool;
         this.conversationMemoryService = conversationMemoryService;
     }
 
@@ -72,7 +78,8 @@ public class ChatController {
 
         var content = chatClient.prompt()
                 .messages(messages)
-                .tools(orderQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool, paymentDailyReportTool)
+                .tools(orderQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool,
+                        paymentDailyReportTool, paymentAnomalyInvestigationTool)
                 .call()
                 .content();
 
@@ -93,7 +100,8 @@ public class ChatController {
 
         chatClient.prompt()
                 .messages(messages)
-                .tools(orderQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool, paymentDailyReportTool)
+                .tools(orderQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool,
+                        paymentDailyReportTool, paymentAnomalyInvestigationTool)
                 .stream()
                 .content()
                 .subscribe(

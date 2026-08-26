@@ -33,12 +33,39 @@ public class PaymentDailyReportService {
      * 日报生成流程：按自然日聚合数据 -> 计算指标 -> 保存 JSON 结果。
      */
     public DailyPaymentReport generate(LocalDate reportDate) {
+        var report = summarize(reportDate, true);
+
+        paymentDailyReportMapper.upsertReport(
+                report.reportDate(),
+                report.totalOrders(),
+                report.successOrders(),
+                report.failedOrders(),
+                report.pendingOrders(),
+                report.successRate(),
+                report.failureRate(),
+                report.totalAmount(),
+                toJson(report),
+                java.time.LocalDateTime.now());
+
+        return report;
+    }
+
+    /**
+     * 异常调查摘要流程：只聚合订单和支付流水，不查询支付日志，不覆盖日报表。
+     */
+    public DailyPaymentReport summarizeWithoutLatency(LocalDate reportDate) {
+        return summarize(reportDate, false);
+    }
+
+    private DailyPaymentReport summarize(LocalDate reportDate, boolean includeLatency) {
         var startTime = reportDate.atStartOfDay();
         var endTime = reportDate.plusDays(1).atStartOfDay();
         var summary = normalize(paymentDailyReportMapper.summarizeOrders(startTime, endTime));
         var channelStats = paymentDailyReportMapper.summarizeChannels(startTime, endTime);
         var failureStats = paymentDailyReportMapper.summarizeFailures(startTime, endTime, FAILURE_TOP_LIMIT);
-        var latencyStat = normalize(paymentDailyReportMapper.summarizeLatency(startTime, endTime));
+        var latencyStat = includeLatency
+                ? normalize(paymentDailyReportMapper.summarizeLatency(startTime, endTime))
+                : new PaymentLatencyDailyStat();
 
         var totalOrders = number(summary.getTotalOrders());
         var successOrders = number(summary.getSuccessOrders());
@@ -61,19 +88,6 @@ public class PaymentDailyReportService {
                 failureStats,
                 latencyStat,
                 buildHighlights(totalOrders, successOrders, failedOrders, pendingOrders, channelStats, failureStats, latencyStat));
-
-        paymentDailyReportMapper.upsertReport(
-                report.reportDate(),
-                report.totalOrders(),
-                report.successOrders(),
-                report.failedOrders(),
-                report.pendingOrders(),
-                report.successRate(),
-                report.failureRate(),
-                report.totalAmount(),
-                toJson(report),
-                java.time.LocalDateTime.now());
-
         return report;
     }
 

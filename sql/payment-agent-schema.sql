@@ -128,6 +128,86 @@ CREATE TABLE payment_daily_report (
     INDEX idx_daily_report_generated_at (generated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付日报表';
 
+CREATE TABLE payment_anomaly_event (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    anomaly_no VARCHAR(64) NOT NULL UNIQUE COMMENT '异常事件编号',
+    anomaly_date DATE NOT NULL COMMENT '异常所属日期',
+    anomaly_type VARCHAR(64) NOT NULL COMMENT '异常类型：HIGH_FAILURE_RATE/CHANNEL_FAILURE_SPIKE/FAILURE_CODE_SPIKE/AMOUNT_ANOMALY',
+    severity VARCHAR(32) NOT NULL COMMENT '严重级别：LOW/MEDIUM/HIGH/CRITICAL',
+    status VARCHAR(32) NOT NULL DEFAULT 'NEW' COMMENT '状态：NEW/INVESTIGATING/RESOLVED/IGNORED',
+    title VARCHAR(256) NOT NULL COMMENT '异常标题',
+    description VARCHAR(1024) DEFAULT NULL COMMENT '异常描述',
+    metric_name VARCHAR(128) DEFAULT NULL COMMENT '异常指标名称',
+    metric_value DECIMAL(18, 4) DEFAULT NULL COMMENT '异常指标值',
+    threshold_value DECIMAL(18, 4) DEFAULT NULL COMMENT '触发阈值',
+    dimension_type VARCHAR(64) DEFAULT NULL COMMENT '异常维度类型：CHANNEL/METHOD/FAILURE_CODE/USER/DATE',
+    dimension_value VARCHAR(128) DEFAULT NULL COMMENT '异常维度值',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+
+    INDEX idx_anomaly_date (anomaly_date),
+    INDEX idx_anomaly_type (anomaly_type),
+    INDEX idx_anomaly_status (status),
+    INDEX idx_anomaly_dimension (dimension_type, dimension_value)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付异常事件表';
+
+CREATE TABLE payment_investigation (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    investigation_no VARCHAR(64) NOT NULL UNIQUE COMMENT '调查任务编号',
+    anomaly_no VARCHAR(64) DEFAULT NULL COMMENT '关联异常事件编号',
+    investigation_date DATE NOT NULL COMMENT '调查日期',
+    trigger_type VARCHAR(32) NOT NULL COMMENT '触发方式：MANUAL/AUTO/LLM_TOOL',
+    status VARCHAR(32) NOT NULL DEFAULT 'RUNNING' COMMENT '状态：RUNNING/COMPLETED/FAILED',
+    question VARCHAR(1024) DEFAULT NULL COMMENT '用户原始问题',
+    summary VARCHAR(2048) DEFAULT NULL COMMENT '调查结论摘要',
+    conclusion LONGTEXT DEFAULT NULL COMMENT '完整调查结论',
+    started_at DATETIME NOT NULL COMMENT '开始时间',
+    finished_at DATETIME DEFAULT NULL COMMENT '结束时间',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+
+    INDEX idx_investigation_anomaly_no (anomaly_no),
+    INDEX idx_investigation_date (investigation_date),
+    INDEX idx_investigation_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付异常调查任务表';
+
+CREATE TABLE payment_investigation_step (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    investigation_no VARCHAR(64) NOT NULL COMMENT '调查任务编号',
+    step_no INT NOT NULL COMMENT '步骤序号',
+    step_type VARCHAR(64) NOT NULL COMMENT '步骤类型：DETECT_ANOMALY/QUERY_TRANSACTION/QUERY_ORDER/SEARCH_KNOWLEDGE/SUMMARIZE',
+    step_name VARCHAR(128) NOT NULL COMMENT '步骤名称',
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING/RUNNING/COMPLETED/FAILED',
+    input_content LONGTEXT DEFAULT NULL COMMENT '步骤输入',
+    output_content LONGTEXT DEFAULT NULL COMMENT '步骤输出',
+    error_message VARCHAR(1024) DEFAULT NULL COMMENT '失败信息',
+    started_at DATETIME DEFAULT NULL COMMENT '开始时间',
+    finished_at DATETIME DEFAULT NULL COMMENT '结束时间',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+
+    UNIQUE KEY uk_investigation_step (investigation_no, step_no),
+    INDEX idx_step_investigation_no (investigation_no),
+    INDEX idx_step_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付异常调查步骤表';
+
+CREATE TABLE payment_investigation_evidence (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    investigation_no VARCHAR(64) NOT NULL COMMENT '调查任务编号',
+    step_no INT DEFAULT NULL COMMENT '来源步骤序号',
+    evidence_type VARCHAR(64) NOT NULL COMMENT '证据类型：DAILY_REPORT/ORDER/TRANSACTION/KNOWLEDGE/METRIC',
+    evidence_source VARCHAR(128) DEFAULT NULL COMMENT '证据来源：MySQL/Chroma/Tool',
+    reference_id VARCHAR(128) DEFAULT NULL COMMENT '关联业务编号，例如订单号、流水号、文档 Chunk ID',
+    title VARCHAR(256) DEFAULT NULL COMMENT '证据标题',
+    content LONGTEXT NOT NULL COMMENT '证据内容 JSON 或文本',
+    confidence DECIMAL(10, 4) DEFAULT NULL COMMENT '证据置信度',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+
+    INDEX idx_evidence_investigation_no (investigation_no),
+    INDEX idx_evidence_type (evidence_type),
+    INDEX idx_evidence_reference_id (reference_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付异常调查证据表';
+
 INSERT INTO payment_method (method_code, method_name, enabled, created_at, updated_at) VALUES
 ('BANK_CARD', '银行卡支付', 1, NOW(), NOW()),
 ('WECHAT_PAY', '微信支付', 1, NOW(), NOW()),
