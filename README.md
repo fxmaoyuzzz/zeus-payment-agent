@@ -11,6 +11,14 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
     <td><img src="png/query_order_pay_fail_reason_1.png" width="420" alt="查询订单支付失败原因效果图 1"></td>
     <td><img src="png/query_order_pay_fail_reason_2.png" width="420" alt="查询订单支付失败原因效果图 2"></td>
   </tr>
+  <tr>
+    <td><img src="png/daily_report_1.png" width="420" alt="支付日报效果图 1"></td>
+    <td><img src="png/daily_report_2.png" width="420" alt="支付日报效果图 2"></td>
+  </tr>
+  <tr>
+    <td><img src="png/daily_report_3.png" width="420" alt="支付日报效果图 3"></td>
+    <td><img src="png/daily_report_4.png" width="420" alt="支付日报效果图 4"></td>
+  </tr>
 </table>
 
 ## 功能能力
