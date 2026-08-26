@@ -28,6 +28,7 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 - 自然语言查询订单。
 - LLM 自动调用订单查询 Tool。
 - 基于 MySQL 查询订单数据。
+- 支付流水独立查询 ToolCalling 能力。
 - Redis 保存多轮对话上下文。
 - 支持连续对话中的上下文引用，例如“这个订单”“上一笔”。
 - Web 聊天页面。
@@ -40,8 +41,10 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 - V5 知识库文档切分、预览和 Chroma 手动导入管理接口。
 - V5 知识库检索 ToolCalling 基础能力。
 - V6 支付日报手动生成、定时生成和 ToolCalling 基础能力。
+- V6 支付日报前端可视化图表。
 - V7 支付异常自动调查增强能力，不包含支付日志查询。
 - V7 支持渠道失败码交叉、小时窗口、用户集中度和金额区间深挖。
+- Tool 调用审计基础能力，记录入参摘要、出参摘要、状态和耗时。
 - 测试环境批量生成订单和支付流水数据。
 - 前端支持 Markdown 加粗、行内代码和表格渲染。
 
@@ -106,6 +109,7 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
     <tr><td>HTML</td><td nowrap>HTML5</td><td>页面结构</td></tr>
     <tr><td>CSS</td><td nowrap>CSS3</td><td>页面布局、聊天气泡、头像和动效</td></tr>
     <tr><td>JavaScript</td><td nowrap>ES6+</td><td>前端交互和流式渲染</td></tr>
+    <tr><td>Canvas</td><td nowrap>HTML5</td><td>支付日报可视化图表</td></tr>
     <tr><td>Server-Sent Events</td><td nowrap>-</td><td>服务端流式输出</td></tr>
     <tr><td>Fetch ReadableStream</td><td nowrap>-</td><td>前端读取流式响应</td></tr>
     <tr><td>localStorage</td><td nowrap>-</td><td>保存当前会话 ID</td></tr>
@@ -128,6 +132,7 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
     <tr><td>Conversation Memory</td><td nowrap>-</td><td>保存多轮对话上下文</td></tr>
     <tr><td>Prompt 编排</td><td nowrap>2.0.0</td><td>控制 Agent 角色、回答边界和工具调用策略</td></tr>
     <tr><td>RAG</td><td nowrap>2.0.0</td><td>知识库文档切分、向量化、Chroma 存储和检索增强</td></tr>
+    <tr><td>Tool Audit</td><td nowrap>-</td><td>记录 Tool 调用参数、结果、状态和耗时</td></tr>
     <tr><td>Multi-Agent</td><td nowrap>-</td><td>后续拆分订单、支付、日志、知识库等专业 Agent</td></tr>
     <tr><td>Eval</td><td nowrap>Spring AI Test 2.0.0</td><td>后续评估回答质量和 ToolCalling 准确性</td></tr>
     <tr><td>Tracing</td><td nowrap>-</td><td>后续追踪 LLM 调用、Tool 调用和调查链路</td></tr>
@@ -166,7 +171,7 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 | `order.tool` | 订单查询 ToolCalling 能力 |
 | `order.mapper` | 订单 MyBatis SQL 查询 |
 | `order.model` | 订单实体和 LLM 返回视图 |
-| `payment.tool` | 支付失败原因分析 ToolCalling 能力 |
+| `payment.tool` | 支付失败原因分析和支付流水查询 ToolCalling 能力 |
 | `payment.mapper` | 支付流水、支付日志、失败规则查询 |
 | `payment.model` | 支付流水、日志、规则和分析结果模型 |
 | `knowledge.controller` | 知识库管理接口 |
@@ -179,6 +184,8 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 | `report.scheduler` | 支付日报定时生成任务 |
 | `report.tool` | 支付日报 ToolCalling 能力 |
 | `report.model` | 日报汇总、渠道、失败原因和耗时模型 |
+| `audit.service` | Tool 调用审计记录服务 |
+| `audit.mapper` | Tool 调用审计 MyBatis 写入 |
 | `investigation.controller` | 支付异常调查管理接口 |
 | `investigation.service` | 异常识别、动态深挖、证据保存和结论汇总 |
 | `investigation.mapper` | 异常调查 MyBatis SQL 查询和写入 |
@@ -209,7 +216,7 @@ LLM 根据用户问题自动判断是否需要查询订单，并选择合适的�
 
 ### V6 自动做日报
 
-自动汇总支付订单量、成功率、失败率、渠道分布、异常 TopN 和重点问题，生成支付日报。当前已支持管理接口手动生成、定时任务自动生成，并可由 LLM 通过 ToolCalling 触发。
+自动汇总支付订单量、成功率、失败率、渠道分布、异常 TopN 和重点问题，生成支付日报。当前已支持管理接口手动生成、定时任务自动生成、前端图表展示，并可由 LLM 通过 ToolCalling 触发。
 
 ### V7 发现异常后自主继续调查
 
@@ -239,6 +246,6 @@ LLM 根据用户问题自动判断是否需要查询订单，并选择合适的�
 | V8 | 跨订单、支付、日志多个 Agent 协作 | 未实现 |
 | V9 | Eval / Tracing / 权限 | 基础依赖已准备，业务能力未完整实现 |
 
-现阶段已经具备简单对话、流式输出、上下文记忆、订单查询、支付失败分析、知识库检索、日报生成、异常调查和测试数据批量生成能力。
+现阶段已经具备简单对话、流式输出、上下文记忆、订单查询、支付流水查询、支付失败分析、知识库检索、日报生成、日报可视化、异常调查、Tool 调用审计和测试数据批量生成能力。
 
 后续重点是增强知识库召回质量、完善日报趋势对比和补齐独立支付日志查询能力。

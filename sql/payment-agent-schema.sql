@@ -208,6 +208,25 @@ CREATE TABLE payment_investigation_evidence (
     INDEX idx_evidence_reference_id (reference_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付异常调查证据表';
 
+CREATE TABLE tool_call_audit (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    trace_id VARCHAR(128) NOT NULL COMMENT 'Tool 调用审计追踪ID',
+    tool_name VARCHAR(128) NOT NULL COMMENT 'Tool 名称',
+    tool_class VARCHAR(256) NOT NULL COMMENT 'Tool 类名',
+    tool_method VARCHAR(128) NOT NULL COMMENT 'Tool 方法名',
+    request_summary LONGTEXT DEFAULT NULL COMMENT 'Tool 入参摘要',
+    response_summary LONGTEXT DEFAULT NULL COMMENT 'Tool 出参摘要',
+    status VARCHAR(32) NOT NULL COMMENT '调用状态：SUCCESS/FAILED',
+    error_message VARCHAR(1024) DEFAULT NULL COMMENT '失败信息',
+    latency_ms BIGINT NOT NULL DEFAULT 0 COMMENT '调用耗时毫秒',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+
+    INDEX idx_tool_audit_trace_id (trace_id),
+    INDEX idx_tool_audit_tool_name (tool_name),
+    INDEX idx_tool_audit_status (status),
+    INDEX idx_tool_audit_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Tool 调用审计表';
+
 INSERT INTO payment_method (method_code, method_name, enabled, created_at, updated_at) VALUES
 ('BANK_CARD', '银行卡支付', 1, NOW(), NOW()),
 ('WECHAT_PAY', '微信支付', 1, NOW(), NOW()),

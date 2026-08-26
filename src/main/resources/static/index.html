@@ -13,8 +13,35 @@
           <h1>Zeus Payment Agent</h1>
           <p id="sessionLabel"></p>
         </div>
-        <button id="newSessionButton" type="button">新会话</button>
+        <div class="topbar-actions">
+          <input id="reportDateInput" type="date" value="2026-08-25" aria-label="日报日期">
+          <button id="loadReportButton" type="button">日报</button>
+          <button id="newSessionButton" type="button">新会话</button>
+        </div>
       </header>
+
+      <section id="reportPanel" class="report-panel" hidden>
+        <div class="report-panel-header">
+          <div>
+            <h2>支付日报</h2>
+            <p id="reportSummary"></p>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-box">
+            <h3>订单状态</h3>
+            <canvas id="statusChart" width="320" height="180"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>渠道分布</h3>
+            <canvas id="channelChart" width="320" height="180"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>失败原因 Top</h3>
+            <canvas id="failureChart" width="320" height="180"></canvas>
+          </div>
+        </div>
+      </section>
 
       <section id="messages" class="messages" aria-live="polite"></section>
 
@@ -32,4 +59,3 @@
     <script src="/app.js"></script>
   </body>
 </html>
-

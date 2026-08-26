@@ -8,15 +8,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ConversationMemoryService {
 
-    private static final Logger log = LoggerFactory.getLogger(ConversationMemoryService.class);
     private static final String KEY_PREFIX = "zeus:payment-agent:conversation:";
     private static final int MAX_MESSAGES = 20;
     private static final Duration TTL = Duration.ofHours(6);
@@ -42,7 +39,6 @@ public class ConversationMemoryService {
                     .toList();
         }
         catch (RuntimeException ex) {
-            log.warn("Redis conversation memory unavailable, falling back to in-memory history: {}", ex.getMessage());
             return List.copyOf(fallbackMemory.getOrDefault(conversationId, List.of()));
         }
     }

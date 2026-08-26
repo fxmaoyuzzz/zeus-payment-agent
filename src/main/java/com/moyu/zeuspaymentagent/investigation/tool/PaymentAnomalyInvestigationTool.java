@@ -1,5 +1,6 @@
 package com.moyu.zeuspaymentagent.investigation.tool;
 
+import com.moyu.zeuspaymentagent.audit.service.ToolCallAuditService;
 import com.moyu.zeuspaymentagent.investigation.model.PaymentAnomalyInvestigationResult;
 import com.moyu.zeuspaymentagent.investigation.service.PaymentAnomalyInvestigationService;
 import java.time.LocalDate;
@@ -12,9 +13,13 @@ import org.springframework.util.StringUtils;
 public class PaymentAnomalyInvestigationTool {
 
     private final PaymentAnomalyInvestigationService investigationService;
+    private final ToolCallAuditService toolCallAuditService;
 
-    public PaymentAnomalyInvestigationTool(PaymentAnomalyInvestigationService investigationService) {
+    public PaymentAnomalyInvestigationTool(
+            PaymentAnomalyInvestigationService investigationService,
+            ToolCallAuditService toolCallAuditService) {
         this.investigationService = investigationService;
+        this.toolCallAuditService = toolCallAuditService;
     }
 
     /**
@@ -28,7 +33,19 @@ public class PaymentAnomalyInvestigationTool {
                     String investigationDate,
             @ToolParam(required = false, description = "用户原始调查问题")
                     String question) {
-        return investigationService.investigate(parseDate(investigationDate), question, "LLM_TOOL");
+        var startedAt = System.currentTimeMillis();
+        var args = new Object[] {investigationDate, question};
+        try {
+            var result = investigationService.investigate(parseDate(investigationDate), question, "LLM_TOOL");
+            toolCallAuditService.record("investigate_payment_anomaly", getClass().getName(),
+                    "investigatePaymentAnomaly", args, result, null, System.currentTimeMillis() - startedAt);
+            return result;
+        }
+        catch (RuntimeException ex) {
+            toolCallAuditService.record("investigate_payment_anomaly", getClass().getName(),
+                    "investigatePaymentAnomaly", args, null, ex, System.currentTimeMillis() - startedAt);
+            throw ex;
+        }
     }
 
     private LocalDate parseDate(String investigationDate) {

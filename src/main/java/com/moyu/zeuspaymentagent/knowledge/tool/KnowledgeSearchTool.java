@@ -1,5 +1,6 @@
 package com.moyu.zeuspaymentagent.knowledge.tool;
 
+import com.moyu.zeuspaymentagent.audit.service.ToolCallAuditService;
 import com.moyu.zeuspaymentagent.knowledge.model.KnowledgeSearchHit;
 import com.moyu.zeuspaymentagent.knowledge.model.KnowledgeSearchResult;
 import java.util.List;
@@ -22,9 +23,13 @@ public class KnowledgeSearchTool {
     private static final double DEFAULT_SIMILARITY_THRESHOLD = 0.2;
 
     private final ObjectProvider<VectorStore> vectorStoreProvider;
+    private final ToolCallAuditService toolCallAuditService;
 
-    public KnowledgeSearchTool(ObjectProvider<VectorStore> vectorStoreProvider) {
+    public KnowledgeSearchTool(
+            ObjectProvider<VectorStore> vectorStoreProvider,
+            ToolCallAuditService toolCallAuditService) {
         this.vectorStoreProvider = vectorStoreProvider;
+        this.toolCallAuditService = toolCallAuditService;
     }
 
     /**
@@ -38,22 +43,37 @@ public class KnowledgeSearchTool {
                     String query,
             @ToolParam(required = false, description = "返回的知识片段数量，默认5，最大10")
                     Integer topK) {
-        var vectorStore = vectorStoreProvider.getIfAvailable();
-        if (vectorStore == null) {
-            return new KnowledgeSearchResult(query, normalizeTopK(topK), 0, List.of());
+        var startedAt = System.currentTimeMillis();
+        var args = new Object[] {query, topK};
+        try {
+            var vectorStore = vectorStoreProvider.getIfAvailable();
+            if (vectorStore == null) {
+                var result = new KnowledgeSearchResult(query, normalizeTopK(topK), 0, List.of());
+                toolCallAuditService.record("search_knowledge_base", getClass().getName(),
+                        "searchKnowledgeBase", args, result, null, System.currentTimeMillis() - startedAt);
+                return result;
+            }
+
+            var request = SearchRequest.builder()
+                    .query(query)
+                    .topK(normalizeTopK(topK))
+                    .similarityThreshold(DEFAULT_SIMILARITY_THRESHOLD)
+                    .build();
+
+            var hits = vectorStore.similaritySearch(request).stream()
+                    .map(this::toHit)
+                    .toList();
+
+            var result = new KnowledgeSearchResult(query, request.getTopK(), hits.size(), hits);
+            toolCallAuditService.record("search_knowledge_base", getClass().getName(),
+                    "searchKnowledgeBase", args, result, null, System.currentTimeMillis() - startedAt);
+            return result;
         }
-
-        var request = SearchRequest.builder()
-                .query(query)
-                .topK(normalizeTopK(topK))
-                .similarityThreshold(DEFAULT_SIMILARITY_THRESHOLD)
-                .build();
-
-        var hits = vectorStore.similaritySearch(request).stream()
-                .map(this::toHit)
-                .toList();
-
-        return new KnowledgeSearchResult(query, request.getTopK(), hits.size(), hits);
+        catch (RuntimeException ex) {
+            toolCallAuditService.record("search_knowledge_base", getClass().getName(),
+                    "searchKnowledgeBase", args, null, ex, System.currentTimeMillis() - startedAt);
+            throw ex;
+        }
     }
 
     private KnowledgeSearchHit toHit(Document document) {

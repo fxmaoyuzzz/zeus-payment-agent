@@ -4,6 +4,13 @@ const inputEl = document.querySelector("#messageInput");
 const sendButtonEl = document.querySelector("#sendButton");
 const newSessionButtonEl = document.querySelector("#newSessionButton");
 const sessionLabelEl = document.querySelector("#sessionLabel");
+const loadReportButtonEl = document.querySelector("#loadReportButton");
+const reportDateInputEl = document.querySelector("#reportDateInput");
+const reportPanelEl = document.querySelector("#reportPanel");
+const reportSummaryEl = document.querySelector("#reportSummary");
+const statusChartEl = document.querySelector("#statusChart");
+const channelChartEl = document.querySelector("#channelChart");
+const failureChartEl = document.querySelector("#failureChart");
 
 const conversationKey = "zeus-payment-agent.conversationId";
 let conversationId = getOrCreateConversationId();
@@ -11,6 +18,7 @@ let activeThinkingTimer = null;
 
 renderSession();
 appendMessage("assistant", "你好，我是 Zeus Payment Agent，可以帮你查询订单、分析支付失败原因、检索支付知识库或生成支付日报。");
+resizeComposerInput();
 
 formEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -21,6 +29,7 @@ formEl.addEventListener("submit", async (event) => {
   }
 
   inputEl.value = "";
+  resizeComposerInput();
   setSending(true);
   appendMessage("user", message);
   const assistantEl = appendMessage("assistant", "");
@@ -48,6 +57,12 @@ newSessionButtonEl.addEventListener("click", () => {
   appendMessage("assistant", "已开始新会话。");
   inputEl.focus();
 });
+
+loadReportButtonEl.addEventListener("click", async () => {
+  await loadDailyReportChart();
+});
+
+inputEl.addEventListener("input", resizeComposerInput);
 
 inputEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey) {
@@ -464,6 +479,109 @@ function setSending(isSending) {
   inputEl.disabled = isSending;
   sendButtonEl.disabled = isSending;
   newSessionButtonEl.disabled = isSending;
+  loadReportButtonEl.disabled = isSending;
+  if (!isSending) {
+    resizeComposerInput();
+  }
+}
+
+function resizeComposerInput() {
+  inputEl.style.height = "auto";
+  inputEl.style.height = `${Math.min(inputEl.scrollHeight, 180)}px`;
+}
+
+async function loadDailyReportChart() {
+  const reportDate = reportDateInputEl.value;
+  if (!reportDate) {
+    appendMessage("error", "请选择日报日期。");
+    return;
+  }
+
+  loadReportButtonEl.disabled = true;
+  try {
+    const response = await fetch(`/api/admin/reports/daily-payment/chart?reportDate=${encodeURIComponent(reportDate)}`);
+    if (!response.ok) {
+      throw new Error(`日报图表加载失败：HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    reportPanelEl.hidden = false;
+    reportSummaryEl.textContent = `${data.reportDate}：总单 ${data.totalOrders}，成功 ${data.successOrders}，失败 ${data.failedOrders}，处理中 ${data.pendingOrders}`;
+    drawStatusChart(statusChartEl, data);
+    drawBarChart(
+      channelChartEl,
+      (data.channelStats || []).slice(0, 6).map((item) => ({
+        label: item.channelCode,
+        value: Number(item.totalCount || 0),
+        color: "#2563eb"
+      })),
+      "单"
+    );
+    drawBarChart(
+      failureChartEl,
+      (data.failureStats || []).slice(0, 6).map((item) => ({
+        label: item.failureCode || "UNKNOWN",
+        value: Number(item.failureCount || 0),
+        color: "#dc2626"
+      })),
+      "次"
+    );
+  }
+  catch (error) {
+    appendMessage("error", error.message || "日报图表加载失败");
+  }
+  finally {
+    loadReportButtonEl.disabled = false;
+  }
+}
+
+function drawStatusChart(canvas, data) {
+  const rows = [
+    { label: "成功", value: Number(data.successOrders || 0), color: "#16a34a" },
+    { label: "失败", value: Number(data.failedOrders || 0), color: "#dc2626" },
+    { label: "处理中", value: Number(data.pendingOrders || 0), color: "#f59e0b" }
+  ];
+  drawBarChart(canvas, rows, "单");
+}
+
+function drawBarChart(canvas, rows, unit) {
+  const context = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const padding = 28;
+  const labelWidth = 92;
+  const maxValue = Math.max(...rows.map((row) => row.value), 1);
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+
+  if (rows.length === 0) {
+    context.fillStyle = "#64748b";
+    context.font = "13px sans-serif";
+    context.fillText("暂无数据", padding, height / 2);
+    return;
+  }
+
+  const rowHeight = Math.min(24, (height - padding * 2) / rows.length);
+  rows.forEach((row, index) => {
+    const y = padding + index * rowHeight;
+    const barWidth = Math.max(2, (width - labelWidth - padding * 2) * row.value / maxValue);
+    context.fillStyle = "#475569";
+    context.font = "12px sans-serif";
+    context.fillText(shortLabel(row.label), padding, y + 13);
+    context.fillStyle = row.color;
+    context.fillRect(labelWidth, y, barWidth, 14);
+    context.fillStyle = "#0f172a";
+    context.fillText(`${row.value}${unit}`, labelWidth + barWidth + 6, y + 12);
+  });
+}
+
+function shortLabel(label) {
+  if (!label) {
+    return "UNKNOWN";
+  }
+  return label.length > 12 ? `${label.slice(0, 11)}...` : label;
 }
 
 function getOrCreateConversationId() {

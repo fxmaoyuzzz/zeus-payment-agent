@@ -1,5 +1,6 @@
 package com.moyu.zeuspaymentagent.payment.tool;
 
+import com.moyu.zeuspaymentagent.audit.service.ToolCallAuditService;
 import com.moyu.zeuspaymentagent.order.mapper.PaymentOrderMapper;
 import com.moyu.zeuspaymentagent.order.model.PaymentOrderView;
 import com.moyu.zeuspaymentagent.payment.mapper.PaymentFailureAnalysisMapper;
@@ -20,12 +21,15 @@ public class PaymentFailureAnalysisTool {
 
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentFailureAnalysisMapper analysisMapper;
+    private final ToolCallAuditService toolCallAuditService;
 
     public PaymentFailureAnalysisTool(
             PaymentOrderMapper paymentOrderMapper,
-            PaymentFailureAnalysisMapper analysisMapper) {
+            PaymentFailureAnalysisMapper analysisMapper,
+            ToolCallAuditService toolCallAuditService) {
         this.paymentOrderMapper = paymentOrderMapper;
         this.analysisMapper = analysisMapper;
+        this.toolCallAuditService = toolCallAuditService;
     }
 
     /**
@@ -36,9 +40,12 @@ public class PaymentFailureAnalysisTool {
             description = "根据订单号自动分析支付失败原因。用户询问为什么失败、失败原因、如何处理时优先调用这个工具。")
     public PaymentFailureAnalysisResult analyzePaymentFailure(
             @ToolParam(description = "支付订单号，例如 P202608250001") String orderNo) {
+        var startedAt = System.currentTimeMillis();
+        var args = new Object[] {orderNo};
+        try {
         var order = paymentOrderMapper.findByOrderNo(orderNo).orElse(null);
         if (order == null) {
-            return new PaymentFailureAnalysisResult(
+            var result = new PaymentFailureAnalysisResult(
                     orderNo,
                     false,
                     null,
@@ -50,6 +57,9 @@ public class PaymentFailureAnalysisTool {
                     "LOW",
                     List.of("订单表未查询到记录"),
                     List.of());
+            toolCallAuditService.record("analyze_payment_failure", getClass().getName(),
+                    "analyzePaymentFailure", args, result, null, System.currentTimeMillis() - startedAt);
+            return result;
         }
 
         var transaction = analysisMapper.findLatestTransactionByOrderNo(orderNo).orElse(null);
@@ -100,7 +110,7 @@ public class PaymentFailureAnalysisTool {
             confidence = "MEDIUM";
         }
 
-        return new PaymentFailureAnalysisResult(
+        var result = new PaymentFailureAnalysisResult(
                 orderNo,
                 true,
                 PaymentOrderView.from(order),
@@ -112,6 +122,15 @@ public class PaymentFailureAnalysisTool {
                 confidence,
                 evidence,
                 logs);
+            toolCallAuditService.record("analyze_payment_failure", getClass().getName(),
+                    "analyzePaymentFailure", args, result, null, System.currentTimeMillis() - startedAt);
+            return result;
+        }
+        catch (RuntimeException ex) {
+            toolCallAuditService.record("analyze_payment_failure", getClass().getName(),
+                    "analyzePaymentFailure", args, null, ex, System.currentTimeMillis() - startedAt);
+            throw ex;
+        }
     }
 
     private String inferReasonMessage(String orderFailureReason, PaymentTransaction transaction) {

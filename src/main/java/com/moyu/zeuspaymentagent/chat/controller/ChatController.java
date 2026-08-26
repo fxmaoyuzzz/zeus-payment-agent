@@ -6,6 +6,7 @@ import com.moyu.zeuspaymentagent.investigation.tool.PaymentAnomalyInvestigationT
 import com.moyu.zeuspaymentagent.knowledge.tool.KnowledgeSearchTool;
 import com.moyu.zeuspaymentagent.order.tool.OrderQueryTool;
 import com.moyu.zeuspaymentagent.payment.tool.PaymentFailureAnalysisTool;
+import com.moyu.zeuspaymentagent.payment.tool.PaymentTransactionQueryTool;
 import com.moyu.zeuspaymentagent.report.tool.PaymentDailyReportTool;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +32,7 @@ public class ChatController {
             你是支付订单查询助手。
             你只能基于工具返回的订单数据回答，不要编造订单。
             如果用户询问订单号、订单状态、用户订单列表，优先调用订单查询工具。
+            如果用户询问支付流水、交易记录、支付单、某用户支付记录或某渠道流水，优先调用支付流水查询工具。
             如果用户询问支付为什么失败、失败原因、失败归因、如何处理，优先调用支付失败分析工具。
             如果用户询问支付渠道规则、错误码解释、失败处理 SOP、排查步骤，优先调用知识库检索工具。
             如果用户要求生成支付日报、昨日支付概览、某日支付统计，优先调用支付日报工具。
@@ -48,6 +50,7 @@ public class ChatController {
 
     private final ChatClient chatClient;
     private final OrderQueryTool orderQueryTool;
+    private final PaymentTransactionQueryTool paymentTransactionQueryTool;
     private final PaymentFailureAnalysisTool paymentFailureAnalysisTool;
     private final KnowledgeSearchTool knowledgeSearchTool;
     private final PaymentDailyReportTool paymentDailyReportTool;
@@ -57,6 +60,7 @@ public class ChatController {
     public ChatController(
             ChatClient.Builder chatClientBuilder,
             OrderQueryTool orderQueryTool,
+            PaymentTransactionQueryTool paymentTransactionQueryTool,
             PaymentFailureAnalysisTool paymentFailureAnalysisTool,
             KnowledgeSearchTool knowledgeSearchTool,
             PaymentDailyReportTool paymentDailyReportTool,
@@ -64,6 +68,7 @@ public class ChatController {
             ConversationMemoryService conversationMemoryService) {
         this.chatClient = chatClientBuilder.build();
         this.orderQueryTool = orderQueryTool;
+        this.paymentTransactionQueryTool = paymentTransactionQueryTool;
         this.paymentFailureAnalysisTool = paymentFailureAnalysisTool;
         this.knowledgeSearchTool = knowledgeSearchTool;
         this.paymentDailyReportTool = paymentDailyReportTool;
@@ -78,7 +83,7 @@ public class ChatController {
 
         var content = chatClient.prompt()
                 .messages(messages)
-                .tools(orderQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool,
+                .tools(orderQueryTool, paymentTransactionQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool,
                         paymentDailyReportTool, paymentAnomalyInvestigationTool)
                 .call()
                 .content();
@@ -100,7 +105,7 @@ public class ChatController {
 
         chatClient.prompt()
                 .messages(messages)
-                .tools(orderQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool,
+                .tools(orderQueryTool, paymentTransactionQueryTool, paymentFailureAnalysisTool, knowledgeSearchTool,
                         paymentDailyReportTool, paymentAnomalyInvestigationTool)
                 .stream()
                 .content()
