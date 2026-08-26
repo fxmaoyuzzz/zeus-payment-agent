@@ -108,6 +108,26 @@ CREATE TABLE payment_failure_rule (
     INDEX idx_rule_enabled_priority (enabled, priority)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付失败规则表';
 
+CREATE TABLE payment_daily_report (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    report_date DATE NOT NULL COMMENT '日报日期',
+    report_status VARCHAR(32) NOT NULL COMMENT '日报状态：GENERATED/FAILED',
+    total_orders BIGINT NOT NULL DEFAULT 0 COMMENT '订单总数',
+    success_orders BIGINT NOT NULL DEFAULT 0 COMMENT '成功订单数',
+    failed_orders BIGINT NOT NULL DEFAULT 0 COMMENT '失败订单数',
+    pending_orders BIGINT NOT NULL DEFAULT 0 COMMENT '处理中订单数',
+    success_rate DECIMAL(10, 4) NOT NULL DEFAULT 0 COMMENT '成功率',
+    failure_rate DECIMAL(10, 4) NOT NULL DEFAULT 0 COMMENT '失败率',
+    total_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT '订单总金额',
+    report_content LONGTEXT NOT NULL COMMENT '日报 JSON 内容',
+    generated_at DATETIME NOT NULL COMMENT '生成时间',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+
+    UNIQUE KEY uk_daily_report_date (report_date),
+    INDEX idx_daily_report_generated_at (generated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付日报表';
+
 INSERT INTO payment_method (method_code, method_name, enabled, created_at, updated_at) VALUES
 ('BANK_CARD', '银行卡支付', 1, NOW(), NOW()),
 ('WECHAT_PAY', '微信支付', 1, NOW(), NOW()),

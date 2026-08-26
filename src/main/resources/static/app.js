@@ -10,7 +10,7 @@ let conversationId = getOrCreateConversationId();
 let activeThinkingTimer = null;
 
 renderSession();
-appendMessage("assistant", "可以开始查询订单。");
+appendMessage("assistant", "你好，我是 Zeus Payment Agent，可以帮你查询订单、分析支付失败原因、检索支付知识库或生成支付日报。");
 
 formEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -24,7 +24,7 @@ formEl.addEventListener("submit", async (event) => {
   setSending(true);
   appendMessage("user", message);
   const assistantEl = appendMessage("assistant", "");
-  const typingState = createTypingState(assistantEl);
+  const typingState = createTypingState(assistantEl, message);
 
   try {
     await streamChat(message, typingState);
@@ -121,9 +121,13 @@ async function handleSseEvent(eventText, typingState) {
   }
 }
 
-function createTypingState(messageEl) {
+function createTypingState(messageEl, userMessage) {
   const contentEl = document.createElement("div");
   contentEl.className = "message-content";
+  const waitingEl = document.createElement("span");
+  waitingEl.className = "waiting-dots";
+  waitingEl.setAttribute("aria-label", "处理中");
+  waitingEl.innerHTML = "<span></span><span></span><span></span>";
 
   const progressEl = document.createElement("div");
   progressEl.className = "thinking";
@@ -133,14 +137,9 @@ function createTypingState(messageEl) {
   `;
 
   messageEl.textContent = "";
-  messageEl.append(progressEl, contentEl);
+  messageEl.append(progressEl, contentEl, waitingEl);
 
-  const progressTexts = [
-    "正在理解问题",
-    "正在判断是否需要查询订单",
-    "正在调用订单查询工具",
-    "正在整理查询结果"
-  ];
+  const progressTexts = getProgressTexts(userMessage);
   let progressIndex = 0;
   const progressTextEl = progressEl.querySelector(".thinking-text");
 
@@ -151,8 +150,15 @@ function createTypingState(messageEl) {
   }, 900);
 
   let queue = "";
+  let rawContent = "";
   let writing = false;
   let finished = false;
+  let lastRenderAt = 0;
+
+  function renderNow() {
+    contentEl.innerHTML = renderAssistantContent(rawContent);
+    lastRenderAt = Date.now();
+  }
 
   async function drain() {
     if (writing) {
@@ -163,7 +169,10 @@ function createTypingState(messageEl) {
     while (queue.length > 0) {
       const step = nextTextStep(queue);
       queue = queue.slice(step.length);
-      contentEl.textContent += step;
+      rawContent += step;
+      if (Date.now() - lastRenderAt > 120 || queue.length === 0) {
+        renderNow();
+      }
       scrollToBottom();
       await delay(getTypingDelay(step));
     }
@@ -191,29 +200,228 @@ function createTypingState(messageEl) {
       finished = true;
       clearActiveThinkingTimer();
       progressEl.remove();
-      if (!contentEl.textContent.trim()) {
+      waitingEl.remove();
+      if (!rawContent.trim()) {
         contentEl.textContent = "没有收到有效回复。";
+        return;
       }
+
+      renderNow();
     }
   };
 }
 
+function getProgressTexts(message) {
+  const normalizedMessage = message.toLowerCase();
+
+  if (/(日报|日.?报|统计|概览|报表|daily|report)/i.test(normalizedMessage)) {
+    return [
+      "正在理解统计范围",
+      "正在聚合支付数据",
+      "正在计算关键指标",
+      "正在生成日报摘要"
+    ];
+  }
+
+  if (/(失败|原因|为什么|异常|报错|错误码|fail|error|timeout|拒绝|风控)/i.test(normalizedMessage)) {
+    return [
+      "正在理解失败场景",
+      "正在收集支付上下文",
+      "正在分析异常证据",
+      "正在整理处理建议"
+    ];
+  }
+
+  if (/(知识库|文档|规则|SOP|流程|渠道规则|怎么处理|规范|knowledge|rag)/i.test(normalizedMessage)) {
+    return [
+      "正在理解检索意图",
+      "正在匹配知识库文档",
+      "正在筛选相关片段",
+      "正在组织参考答案"
+    ];
+  }
+
+  if (/(流水|交易|transaction|支付记录|支付单|支付流水)/i.test(normalizedMessage)) {
+    return [
+      "正在理解支付流水条件",
+      "正在判断需要的查询工具",
+      "正在读取支付流水数据",
+      "正在整理流水结果"
+    ];
+  }
+
+  if (/(订单|order|单号|用户id|状态)/i.test(normalizedMessage)) {
+    return [
+      "正在理解订单条件",
+      "正在判断需要的查询工具",
+      "正在读取订单数据",
+      "正在整理查询结果"
+    ];
+  }
+
+  return [
+    "正在理解问题",
+    "正在判断需要的能力",
+    "正在调用相关工具",
+    "正在整理回答"
+  ];
+}
+
+function renderAssistantContent(text) {
+  try {
+    const normalizedText = normalizeMarkdownTables(text);
+    const lines = normalizedText.split("\n");
+    const htmlParts = [];
+    let paragraphLines = [];
+
+    function flushParagraph() {
+      if (paragraphLines.length === 0) {
+        return;
+      }
+
+    htmlParts.push(`<p>${renderInlineMarkdown(paragraphLines.join("\n"))}</p>`);
+      paragraphLines = [];
+    }
+
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index];
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        flushParagraph();
+        continue;
+      }
+
+      const heading = trimmed.match(/^(#{1,4})\s*(.+)$/);
+      if (heading) {
+        flushParagraph();
+        const level = Math.min(heading[1].length + 1, 4);
+      htmlParts.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+        continue;
+      }
+
+      if (isTableBlockStart(lines, index)) {
+        flushParagraph();
+        const tableLines = [];
+        while (index < lines.length && isTableLine(lines[index])) {
+          tableLines.push(lines[index]);
+          index++;
+        }
+        index--;
+        htmlParts.push(renderMarkdownTable(tableLines));
+        continue;
+      }
+
+      paragraphLines.push(line);
+    }
+
+    flushParagraph();
+    return htmlParts.join("");
+  }
+  catch (error) {
+    return `<p>${renderInlineMarkdown(text)}</p>`;
+  }
+}
+
+function normalizeMarkdownTables(text) {
+  return text
+    .replace(/([^\n])(\s+\d+\.\s*\*\*)/g, "$1\n$2")
+    .replace(/([^\n])(\s+\d+\.\s)/g, "$1\n$2")
+    .replace(/^(#{1,4})([^|\n]+)(\|.+)$/gm, "$1 $2\n$3")
+    .replace(/(\|[^\n]*\|)(#{1,4})/g, "$1\n$2");
+}
+
+function isTableBlockStart(lines, index) {
+  if (!isTableLine(lines[index] || "")) {
+    return false;
+  }
+
+  if (isTableDivider(lines[index + 1] || "")) {
+    return true;
+  }
+
+  return isTableLine(lines[index + 1] || "");
+}
+
+function isTableLine(line) {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.endsWith("|") && splitTableRow(trimmed).length >= 2;
+}
+
+function isTableDivider(line) {
+  return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+}
+
+function renderMarkdownTable(tableLines) {
+  const rows = tableLines
+    .filter((line) => line.trim())
+    .filter((line) => !isTableDivider(line))
+    .map(splitTableRow);
+
+  if (rows.length < 2) {
+    return `<p>${escapeHtml(tableLines.join("\n"))}</p>`;
+  }
+
+  const headerCells = rows[0] || [];
+  const bodyRows = rows.slice(1);
+
+  const headerHtml = headerCells
+    .map((cell) => `<th>${renderInlineMarkdown(cell)}</th>`)
+    .join("");
+  const bodyHtml = bodyRows
+    .map((row) => `<tr>${row.map((cell) => `<td>${renderInlineMarkdown(cell)}</td>`).join("")}</tr>`)
+    .join("");
+
+  return `
+    <div class="table-wrap">
+      <table>
+        <thead><tr>${headerHtml}</tr></thead>
+        <tbody>${bodyHtml}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function splitTableRow(line) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderInlineMarkdown(value) {
+  return escapeHtml(value)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+}
+
 function nextTextStep(text) {
-  const punctuationIndex = text.search(/[，。！？；：\n]/);
-  if (punctuationIndex >= 0 && punctuationIndex < 8) {
+  const punctuationIndex = text.search(/[。！？\n]/);
+  if (punctuationIndex >= 0 && punctuationIndex < 18) {
     return text.slice(0, punctuationIndex + 1);
   }
-  return text.slice(0, Math.min(text.length, 4));
+  return text.slice(0, Math.min(text.length, 10));
 }
 
 function getTypingDelay(step) {
   if (/[。！？\n]$/.test(step)) {
-    return 180;
+    return 120;
   }
   if (/[，；：]$/.test(step)) {
-    return 110;
+    return 60;
   }
-  return 38;
+  return 26;
 }
 
 function delay(ms) {

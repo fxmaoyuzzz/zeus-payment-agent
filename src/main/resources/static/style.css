@@ -118,10 +118,122 @@ textarea {
 
 .message.assistant {
   background: #ffffff;
+  white-space: normal;
 }
 
 .message-content:empty {
   display: none;
+}
+
+.message-content p {
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-content h2,
+.message-content h3,
+.message-content h4 {
+  margin: 14px 0 8px;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.message-content h2:first-child,
+.message-content h3:first-child,
+.message-content h4:first-child {
+  margin-top: 0;
+}
+
+.table-wrap {
+  width: 100%;
+  margin: 8px 0 14px;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.message-content table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.message-content th,
+.message-content td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.message-content th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+}
+
+.message-content tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.message-content strong {
+  font-weight: 700;
+}
+
+.message-content code {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+.waiting-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+.waiting-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #64748b;
+  animation: waiting-bounce 1s ease-in-out infinite;
+}
+
+.waiting-dots span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.waiting-dots span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes waiting-bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
 }
 
 .thinking {
