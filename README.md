@@ -63,7 +63,7 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 | Spring Boot | 4.0.9 | 应用主框架 |
 | Spring Web MVC | 4.0.9 | REST API、SSE 接口、静态资源访问 |
 | Spring AI | 2.0.0 | LLM 接入、ChatClient、ToolCalling |
-| DeepSeek | deepseek-v4-flash | 当前使用的大模型 |
+| DeepSeek | <span style="white-space: nowrap;">deepseek-v4-flash</span> | 当前使用的大模型 |
 | Qwen Embedding | text-embedding-v4 | V5 知识库文档向量化 |
 | OpenAI Compatible API | - | 通过 OpenAI 兼容协议接入 DeepSeek |
 | Chroma Vector Store | 2.0.0 | V5 RAG 向量存储和相似度检索，当前索引为 `zeus/payment_agent/payment_knowledge` |
