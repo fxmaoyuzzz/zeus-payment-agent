@@ -1,5 +1,8 @@
-package com.moyu.zeuspaymentagent.payment;
+package com.moyu.zeuspaymentagent.payment.mapper;
 
+import com.moyu.zeuspaymentagent.payment.model.PaymentFailureRule;
+import com.moyu.zeuspaymentagent.payment.model.PaymentLog;
+import com.moyu.zeuspaymentagent.payment.model.PaymentTransaction;
 import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Mapper;
@@ -10,6 +13,9 @@ import org.apache.ibatis.annotations.SelectProvider;
 @Mapper
 public interface PaymentFailureAnalysisMapper {
 
+    /**
+     * 查询订单最近一次支付流水，作为失败分析的主证据。
+     */
     @Select("""
             SELECT
                 id,
@@ -35,6 +41,9 @@ public interface PaymentFailureAnalysisMapper {
             """)
     Optional<PaymentTransaction> findLatestTransactionByOrderNo(@Param("orderNo") String orderNo);
 
+    /**
+     * 查询支付链路日志，用于还原渠道请求、回调和异常事件。
+     */
     @Select("""
             SELECT
                 id,
@@ -61,6 +70,9 @@ public interface PaymentFailureAnalysisMapper {
             @Param("transactionNo") String transactionNo,
             @Param("limit") int limit);
 
+    /**
+     * 按支付方式、渠道、失败码和渠道错误码匹配最具体的归因规则。
+     */
     @SelectProvider(type = PaymentFailureRuleSqlProvider.class, method = "findBestRule")
     Optional<PaymentFailureRule> findBestRule(
             @Param("methodCode") String methodCode,

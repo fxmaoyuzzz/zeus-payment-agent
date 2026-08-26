@@ -1,7 +1,10 @@
-package com.moyu.zeuspaymentagent.payment;
+package com.moyu.zeuspaymentagent.payment.model;
 
 import java.time.LocalDateTime;
 
+/**
+ * 支付链路日志实体，记录请求、回调、超时等关键事件。
+ */
 public class PaymentLog {
 
     private Long id;

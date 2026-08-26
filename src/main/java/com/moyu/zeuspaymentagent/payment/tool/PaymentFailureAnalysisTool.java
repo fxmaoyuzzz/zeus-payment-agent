@@ -1,7 +1,11 @@
-package com.moyu.zeuspaymentagent.payment;
+package com.moyu.zeuspaymentagent.payment.tool;
 
-import com.moyu.zeuspaymentagent.order.PaymentOrderMapper;
-import com.moyu.zeuspaymentagent.order.PaymentOrderView;
+import com.moyu.zeuspaymentagent.order.mapper.PaymentOrderMapper;
+import com.moyu.zeuspaymentagent.order.model.PaymentOrderView;
+import com.moyu.zeuspaymentagent.payment.mapper.PaymentFailureAnalysisMapper;
+import com.moyu.zeuspaymentagent.payment.model.PaymentFailureAnalysisResult;
+import com.moyu.zeuspaymentagent.payment.model.PaymentLog;
+import com.moyu.zeuspaymentagent.payment.model.PaymentTransaction;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.ai.tool.annotation.Tool;
@@ -24,6 +28,9 @@ public class PaymentFailureAnalysisTool {
         this.analysisMapper = analysisMapper;
     }
 
+    /**
+     * 分析流程：查订单 -> 查最近支付流水 -> 查支付日志 -> 匹配失败规则 -> 组装证据和建议。
+     */
     @Tool(
             name = "analyze_payment_failure",
             description = "根据订单号自动分析支付失败原因。用户询问为什么失败、失败原因、如何处理时优先调用这个工具。")

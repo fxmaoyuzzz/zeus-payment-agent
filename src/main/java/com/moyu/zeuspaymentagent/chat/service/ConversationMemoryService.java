@@ -1,5 +1,6 @@
-package com.moyu.zeuspaymentagent.chat;
+package com.moyu.zeuspaymentagent.chat.service;
 
+import com.moyu.zeuspaymentagent.chat.model.ConversationMessage;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -27,6 +28,9 @@ public class ConversationMemoryService {
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * 读取流程：优先从 Redis 获取最近对话，Redis 不可用时降级到本地内存。
+     */
     public List<ConversationMessage> getRecentMessages(String conversationId) {
         try {
             var values = redisTemplate.opsForList().range(key(conversationId), 0, -1);
@@ -43,6 +47,9 @@ public class ConversationMemoryService {
         }
     }
 
+    /**
+     * 写入流程：用户消息和助手回复成对保存，并限制历史长度。
+     */
     public void appendExchange(String conversationId, String userMessage, String assistantMessage) {
         append(conversationId, new ConversationMessage(ConversationMessage.Role.USER, userMessage));
         append(conversationId, new ConversationMessage(ConversationMessage.Role.ASSISTANT, assistantMessage));

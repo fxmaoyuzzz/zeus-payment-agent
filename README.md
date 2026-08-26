@@ -2,7 +2,7 @@
 
 Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目标是让用户通过自然语言完成订单查询、支付日志排查、失败原因分析、知识库问答、异常调查和日报生成。
 
-当前阶段先实现最小闭环：用户输入自然语言问题，LLM 判断是否需要查询订单，并通过 ToolCalling 调用订单查询工具，从 MySQL 读取订单数据后生成中文回答。
+当前阶段先实现支付排障 Agent 的最小闭环：用户通过 Web 聊天页面发起自然语言问题，LLM 判断是否需要调用业务 Tool，并从 MySQL、Redis、Chroma 等组件中获取上下文后生成中文回答。
 
 ## 项目效果
 
@@ -29,6 +29,8 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 - 用户和 AI 聊天气泡头像。
 - 支付失败原因自动分析基础能力。
 - V5 知识库文档素材。
+- V5 知识库文档切分、预览和 Chroma 手动导入管理接口。
+- V5 知识库检索 ToolCalling 基础能力。
 
 ### 规划中
 
@@ -51,7 +53,9 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 | Spring Web MVC | 4.0.9 | REST API、SSE 接口、静态资源访问 |
 | Spring AI | 2.0.0 | LLM 接入、ChatClient、ToolCalling |
 | DeepSeek | deepseek-v4-flash | 当前使用的大模型 |
+| Qwen Embedding | text-embedding-v4 | V5 知识库文档向量化 |
 | OpenAI Compatible API | - | 通过 OpenAI 兼容协议接入 DeepSeek |
+| Chroma Vector Store | 2.0.0 | V5 RAG 向量存储和相似度检索，当前索引为 `zeus/payment_agent/payment_knowledge` |
 | MyBatis Spring Boot Starter | 4.0.0 | 订单等结构化数据访问 |
 | MyBatis | 3.5.19 | SQL Mapper 和结果映射 |
 | MySQL Connector/J | 9.7.0 | MySQL JDBC 驱动 |
@@ -85,7 +89,7 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 | ToolCalling | 2.0.0 | 让模型调用订单查询等业务工具 |
 | Conversation Memory | - | 保存多轮对话上下文 |
 | Prompt 编排 | 2.0.0 | 控制 Agent 角色、回答边界和工具调用策略 |
-| RAG | Spring AI Vector Store Advisor 2.0.0 | 后续接入知识库检索增强 |
+| RAG | 2.0.0 | 知识库文档切分、向量化和后续检索增强 |
 | Multi-Agent | - | 后续拆分订单、支付、日志、知识库等专业 Agent |
 | Eval | Spring AI Test 2.0.0 | 后续评估回答质量和 ToolCalling 准确性 |
 | Tracing | - | 后续追踪 LLM 调用、Tool 调用和调查链路 |
@@ -112,6 +116,24 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 
 当前项目已经打通交互层、Agent 层、订单工具层和基础数据层，数据访问层使用 MyBatis。
 
+## 代码结构
+
+| 包路径 | 职责 |
+| --- | --- |
+| `chat.controller` | 对话 HTTP 接口和 SSE 流式输出入口 |
+| `chat.service` | 多轮对话上下文读写 |
+| `chat.model` | 对话消息模型 |
+| `order.tool` | 订单查询 ToolCalling 能力 |
+| `order.mapper` | 订单 MyBatis SQL 查询 |
+| `order.model` | 订单实体和 LLM 返回视图 |
+| `payment.tool` | 支付失败原因分析 ToolCalling 能力 |
+| `payment.mapper` | 支付流水、支付日志、失败规则查询 |
+| `payment.model` | 支付流水、日志、规则和分析结果模型 |
+| `knowledge.controller` | 知识库管理接口 |
+| `knowledge.service` | 文档读取、切分和向量库导入 |
+| `knowledge.tool` | 知识库检索 ToolCalling 能力 |
+| `knowledge.model` | 知识库 Chunk 和导入结果模型 |
+
 ## 版本规划
 
 ### V1 自然语言查询订单
@@ -132,7 +154,7 @@ LLM 根据用户问题自动判断是否需要查询订单，并选择合适的�
 
 ### V5 接入知识库 RAG
 
-接入支付渠道文档、错误码说明、内部 SOP 和历史故障复盘，让回答能够引用知识库上下文。
+接入支付渠道文档、错误码说明、内部 SOP 和历史故障复盘。当前已支持从 `doc` 目录读取 Markdown 文档，按标题和段落切分 Chunk，通过管理接口手动写入 Chroma，并提供知识库检索 Tool 供 LLM 调用。
 
 ### V6 自动做日报
 
@@ -152,6 +174,6 @@ LLM 根据用户问题自动判断是否需要查询订单，并选择合适的�
 
 ## 当前状态
 
-当前项目处于 V1-V2 阶段，并已加入 V4 支付失败分析的基础 ToolCalling 能力，同时准备了 V5 知识库文档素材。现阶段已经具备简单对话、流式输出、上下文记忆、订单查询和支付失败分析能力。
+当前项目已完成 V1-V2 的订单查询闭环，加入了 V4 支付失败分析的基础 ToolCalling 能力，并完成 V5 知识库文档素材、文档切分、Chroma 手动导入管理接口和知识库检索 Tool。现阶段已经具备简单对话、流式输出、上下文记忆、订单查询、支付失败分析和知识库检索能力。
 
-后续重点是补齐支付日志查询和失败原因分析规则，让 Agent 从“查数据”升级为“辅助排障”。
+后续重点是增强知识库召回质量、补充引用格式和错误处理，让 Agent 的回答可以更稳定地引用知识库上下文。

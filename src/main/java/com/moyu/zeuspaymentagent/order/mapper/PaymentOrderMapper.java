@@ -1,5 +1,6 @@
-package com.moyu.zeuspaymentagent.order;
+package com.moyu.zeuspaymentagent.order.mapper;
 
+import com.moyu.zeuspaymentagent.order.model.PaymentOrder;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +12,9 @@ import org.apache.ibatis.annotations.SelectProvider;
 @Mapper
 public interface PaymentOrderMapper {
 
+    /**
+     * 订单号精确查询，供订单查询 Tool 和支付分析 Tool 复用。
+     */
     @Select("""
             SELECT
                 id,
@@ -29,6 +33,9 @@ public interface PaymentOrderMapper {
             """)
     Optional<PaymentOrder> findByOrderNo(@Param("orderNo") String orderNo);
 
+    /**
+     * 按状态、用户、时间范围组合查询订单列表。
+     */
     @SelectProvider(type = PaymentOrderSqlProvider.class, method = "searchOrders")
     List<PaymentOrder> searchOrders(
             @Param("status") String status,

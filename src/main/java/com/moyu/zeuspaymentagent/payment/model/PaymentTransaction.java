@@ -1,8 +1,11 @@
-package com.moyu.zeuspaymentagent.payment;
+package com.moyu.zeuspaymentagent.payment.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 支付流水实体，描述一次支付尝试及渠道返回结果。
+ */
 public class PaymentTransaction {
 
     private Long id;

@@ -1,8 +1,11 @@
-package com.moyu.zeuspaymentagent.payment;
+package com.moyu.zeuspaymentagent.payment.model;
 
-import com.moyu.zeuspaymentagent.order.PaymentOrderView;
+import com.moyu.zeuspaymentagent.order.model.PaymentOrderView;
 import java.util.List;
 
+/**
+ * 支付失败分析 Tool 返回给 LLM 的结构化结果。
+ */
 public record PaymentFailureAnalysisResult(
         String orderNo,
         boolean orderFound,

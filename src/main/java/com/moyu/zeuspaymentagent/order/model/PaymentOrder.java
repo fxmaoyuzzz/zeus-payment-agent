@@ -1,8 +1,11 @@
-package com.moyu.zeuspaymentagent.order;
+package com.moyu.zeuspaymentagent.order.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * MySQL order 表对应的订单实体。
+ */
 public class PaymentOrder {
 
     private Long id;

@@ -1,8 +1,11 @@
-package com.moyu.zeuspaymentagent.order;
+package com.moyu.zeuspaymentagent.order.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 暴露给 LLM 的订单视图，避免直接返回完整数据库实体。
+ */
 public record PaymentOrderView(
         String orderNo,
         String userId,
@@ -27,4 +30,3 @@ public record PaymentOrderView(
                 order.getUpdatedAt());
     }
 }
-

@@ -1,5 +1,7 @@
-package com.moyu.zeuspaymentagent.order;
+package com.moyu.zeuspaymentagent.order.tool;
 
+import com.moyu.zeuspaymentagent.order.mapper.PaymentOrderMapper;
+import com.moyu.zeuspaymentagent.order.model.PaymentOrderView;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.ai.tool.annotation.Tool;
@@ -18,6 +20,9 @@ public class OrderQueryTool {
         this.paymentOrderMapper = paymentOrderMapper;
     }
 
+    /**
+     * 精确查询流程：LLM 提取订单号 -> 查询 MySQL -> 返回适合模型消费的视图对象。
+     */
     @Tool(
             name = "query_order_by_order_no",
             description = "根据支付订单号精确查询单个订单。用户提供订单号时优先调用这个工具。")
@@ -28,6 +33,9 @@ public class OrderQueryTool {
                 .orElse(null);
     }
 
+    /**
+     * 条件查询流程：归一化返回数量 -> Mapper 动态拼 SQL -> 转换为订单视图列表。
+     */
     @Tool(
             name = "search_orders",
             description = "按订单状态、用户ID或创建时间范围查询最近的支付订单列表。不要用于精确订单号查询。")

@@ -1,4 +1,4 @@
-package com.moyu.zeuspaymentagent.chat;
+package com.moyu.zeuspaymentagent.chat.model;
 
 public record ConversationMessage(Role role, String content) {
 

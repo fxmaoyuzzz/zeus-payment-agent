@@ -1,5 +1,8 @@
-package com.moyu.zeuspaymentagent.payment;
+package com.moyu.zeuspaymentagent.payment.model;
 
+/**
+ * 支付失败规则表实体，用于把错误码映射为原因和处理建议。
+ */
 public class PaymentFailureRule {
 
     private Long id;

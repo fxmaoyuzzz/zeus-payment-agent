@@ -119,6 +119,11 @@
       <groupId>org.springframework.ai</groupId>
       <artifactId>spring-ai-vector-store-advisor</artifactId>
     </dependency>
+    <!-- Chroma 向量库接入，用于 V5 RAG 文档向量存储和相似度检索。 -->
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-starter-vector-store-chroma</artifactId>
+    </dependency>
     <!-- Flyway 数据库迁移核心，用于管理订单、支付日志等业务表结构版本。 -->
     <dependency>
       <groupId>org.flywaydb</groupId>
