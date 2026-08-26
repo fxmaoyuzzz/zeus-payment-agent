@@ -57,53 +57,80 @@ Zeus Payment Agent 是一个面向支付排障场景的智能 Agent 项目，目
 
 ### 后端
 
-| 技术 | 版本 | 用途 |
-| --- | --- | --- |
-| Java | 17 | 后端运行环境 |
-| Spring Boot | 4.0.9 | 应用主框架 |
-| Spring Web MVC | 4.0.9 | REST API、SSE 接口、静态资源访问 |
-| Spring AI | 2.0.0 | LLM 接入、ChatClient、ToolCalling |
-| DeepSeek | <nobr>deepseek-v4-flash</nobr> | 当前使用的大模型 |
-| Qwen Embedding | text-embedding-v4 | V5 知识库文档向量化 |
-| OpenAI Compatible API | - | 通过 OpenAI 兼容协议接入 DeepSeek |
-| Chroma Vector Store | 2.0.0 | V5 RAG 向量存储和相似度检索，当前索引为 `zeus/payment_agent/payment_knowledge` |
-| MyBatis Spring Boot Starter | 4.0.0 | 订单等结构化数据访问 |
-| MyBatis | 3.5.19 | SQL Mapper 和结果映射 |
-| MySQL Connector/J | 9.7.0 | MySQL JDBC 驱动 |
-| Redis / Spring Data Redis | 4.0.9 | 多轮对话上下文存储 |
-| Spring Security | 4.0.9 | 后续接口鉴权、权限控制 |
-| Actuator | 4.0.9 | 健康检查、运行状态、监控端点 |
-| Micrometer | 1.16.7 | 指标采集 |
-| Micrometer Tracing | 1.6.7 | 链路追踪基础能力 |
-| OpenTelemetry | 4.0.9 | 后续 Trace 导出和观测 |
-| Quartz | 4.0.9 | 后续日报、巡检、调查任务调度 |
-| Flyway | 11.14.1 | 后续数据库结构版本管理 |
-| Lombok | 1.18.46 | 简化 Java 样板代码 |
-| Maven | - | 依赖管理和项目构建 |
+<table>
+  <thead>
+    <tr>
+      <th align="left">技术</th>
+      <th align="left" width="180">版本</th>
+      <th align="left">用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Java</td><td nowrap>17</td><td>后端运行环境</td></tr>
+    <tr><td>Spring Boot</td><td nowrap>4.0.9</td><td>应用主框架</td></tr>
+    <tr><td>Spring Web MVC</td><td nowrap>4.0.9</td><td>REST API、SSE 接口、静态资源访问</td></tr>
+    <tr><td>Spring AI</td><td nowrap>2.0.0</td><td>LLM 接入、ChatClient、ToolCalling</td></tr>
+    <tr><td>DeepSeek</td><td nowrap>deepseek-v4-flash</td><td>当前使用的大模型</td></tr>
+    <tr><td>Qwen Embedding</td><td nowrap>text-embedding-v4</td><td>V5 知识库文档向量化</td></tr>
+    <tr><td>OpenAI Compatible API</td><td nowrap>-</td><td>通过 OpenAI 兼容协议接入 DeepSeek</td></tr>
+    <tr><td>Chroma Vector Store</td><td nowrap>2.0.0</td><td>V5 RAG 向量存储和相似度检索，当前索引为 <code>zeus/payment_agent/payment_knowledge</code></td></tr>
+    <tr><td>MyBatis Spring Boot Starter</td><td nowrap>4.0.0</td><td>订单等结构化数据访问</td></tr>
+    <tr><td>MyBatis</td><td nowrap>3.5.19</td><td>SQL Mapper 和结果映射</td></tr>
+    <tr><td>MySQL Connector/J</td><td nowrap>9.7.0</td><td>MySQL JDBC 驱动</td></tr>
+    <tr><td>Redis / Spring Data Redis</td><td nowrap>4.0.9</td><td>多轮对话上下文存储</td></tr>
+    <tr><td>Spring Security</td><td nowrap>4.0.9</td><td>后续接口鉴权、权限控制</td></tr>
+    <tr><td>Actuator</td><td nowrap>4.0.9</td><td>健康检查、运行状态、监控端点</td></tr>
+    <tr><td>Micrometer</td><td nowrap>1.16.7</td><td>指标采集</td></tr>
+    <tr><td>Micrometer Tracing</td><td nowrap>1.6.7</td><td>链路追踪基础能力</td></tr>
+    <tr><td>OpenTelemetry</td><td nowrap>4.0.9</td><td>后续 Trace 导出和观测</td></tr>
+    <tr><td>Quartz</td><td nowrap>4.0.9</td><td>后续日报、巡检、调查任务调度</td></tr>
+    <tr><td>Flyway</td><td nowrap>11.14.1</td><td>后续数据库结构版本管理</td></tr>
+    <tr><td>Lombok</td><td nowrap>1.18.46</td><td>简化 Java 样板代码</td></tr>
+    <tr><td>Maven</td><td nowrap>-</td><td>依赖管理和项目构建</td></tr>
+  </tbody>
+</table>
 
 ### 前端
 
-| 技术 | 版本 | 用途 |
-| --- | --- | --- |
-| HTML | HTML5 | 页面结构 |
-| CSS | CSS3 | 页面布局、聊天气泡、头像和动效 |
-| JavaScript | ES6+ | 前端交互和流式渲染 |
-| Server-Sent Events | - | 服务端流式输出 |
-| Fetch ReadableStream | - | 前端读取流式响应 |
-| localStorage | - | 保存当前会话 ID |
+<table>
+  <thead>
+    <tr>
+      <th align="left">技术</th>
+      <th align="left" width="180">版本</th>
+      <th align="left">用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>HTML</td><td nowrap>HTML5</td><td>页面结构</td></tr>
+    <tr><td>CSS</td><td nowrap>CSS3</td><td>页面布局、聊天气泡、头像和动效</td></tr>
+    <tr><td>JavaScript</td><td nowrap>ES6+</td><td>前端交互和流式渲染</td></tr>
+    <tr><td>Server-Sent Events</td><td nowrap>-</td><td>服务端流式输出</td></tr>
+    <tr><td>Fetch ReadableStream</td><td nowrap>-</td><td>前端读取流式响应</td></tr>
+    <tr><td>localStorage</td><td nowrap>-</td><td>保存当前会话 ID</td></tr>
+  </tbody>
+</table>
 
 ### AI 工程
 
-| 能力 | 版本 / 基础 | 用途 |
-| --- | --- | --- |
-| LLM 对话 | 2.0.0 | 自然语言理解和回答生成 |
-| ToolCalling | 2.0.0 | 让模型调用订单查询等业务工具 |
-| Conversation Memory | - | 保存多轮对话上下文 |
-| Prompt 编排 | 2.0.0 | 控制 Agent 角色、回答边界和工具调用策略 |
-| RAG | 2.0.0 | 知识库文档切分、向量化、Chroma 存储和检索增强 |
-| Multi-Agent | - | 后续拆分订单、支付、日志、知识库等专业 Agent |
-| Eval | Spring AI Test 2.0.0 | 后续评估回答质量和 ToolCalling 准确性 |
-| Tracing | - | 后续追踪 LLM 调用、Tool 调用和调查链路 |
+<table>
+  <thead>
+    <tr>
+      <th align="left">能力</th>
+      <th align="left" width="180">版本 / 基础</th>
+      <th align="left">用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>LLM 对话</td><td nowrap>2.0.0</td><td>自然语言理解和回答生成</td></tr>
+    <tr><td>ToolCalling</td><td nowrap>2.0.0</td><td>让模型调用订单查询等业务工具</td></tr>
+    <tr><td>Conversation Memory</td><td nowrap>-</td><td>保存多轮对话上下文</td></tr>
+    <tr><td>Prompt 编排</td><td nowrap>2.0.0</td><td>控制 Agent 角色、回答边界和工具调用策略</td></tr>
+    <tr><td>RAG</td><td nowrap>2.0.0</td><td>知识库文档切分、向量化、Chroma 存储和检索增强</td></tr>
+    <tr><td>Multi-Agent</td><td nowrap>-</td><td>后续拆分订单、支付、日志、知识库等专业 Agent</td></tr>
+    <tr><td>Eval</td><td nowrap>Spring AI Test 2.0.0</td><td>后续评估回答质量和 ToolCalling 准确性</td></tr>
+    <tr><td>Tracing</td><td nowrap>-</td><td>后续追踪 LLM 调用、Tool 调用和调查链路</td></tr>
+  </tbody>
+</table>
 
 ## 技术路线
 
